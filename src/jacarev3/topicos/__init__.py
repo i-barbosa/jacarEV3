@@ -12,6 +12,6 @@ Uso:
         circuito.seguir_linha(robo, porta_sensor=1)
 """
 
-from . import circuito, desvio
+from . import circuito, controle, desvio
 
-__all__ = ["circuito", "desvio"]
+__all__ = ["circuito", "controle", "desvio"]
