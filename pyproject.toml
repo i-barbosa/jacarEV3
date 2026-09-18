@@ -46,3 +46,7 @@ where = ["src"]
 
 [tool.setuptools.dynamic]
 version = {attr = "jacarev3.__version__"}
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]

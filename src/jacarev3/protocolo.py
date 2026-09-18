@@ -83,9 +83,24 @@ def lc_auto(v):
 opSOUND = 0x94
 opUI_WRITE = 0x82
 opINPUT_DEVICE = 0x99
+
+opOUTPUT_RESET = 0xA2
 opOUTPUT_STOP = 0xA3
+opOUTPUT_POWER = 0xA4
+opOUTPUT_SPEED = 0xA5
+opOUTPUT_START = 0xA6
+opOUTPUT_POLARITY = 0xA7
+opOUTPUT_READ = 0xA8
+opOUTPUT_TEST = 0xA9
+opOUTPUT_READY = 0xAA
+opOUTPUT_STEP_POWER = 0xAC
+opOUTPUT_TIME_POWER = 0xAD
 opOUTPUT_STEP_SPEED = 0xAE
 opOUTPUT_TIME_SPEED = 0xAF
+opOUTPUT_STEP_SYNC = 0xB0
+opOUTPUT_TIME_SYNC = 0xB1
+opOUTPUT_CLR_COUNT = 0xB2
+opOUTPUT_GET_COUNT = 0xB3
 
 # Sub-códigos de opSOUND
 SOUND_BREAK = 0
@@ -105,9 +120,25 @@ PORTA_B = 0x02
 PORTA_C = 0x04
 PORTA_D = 0x08
 
+# Índice da porta de motor (0-3). Alguns opcodes querem o índice, não o
+# bitmask: opOUTPUT_GET_COUNT indexa pMotor[No] direto no firmware, mesmo
+# a documentação chamando o parâmetro de "bit field".
+INDICE_A = 0
+INDICE_B = 1
+INDICE_C = 2
+INDICE_D = 3
+
 # Ação de parada de motor
 PARAR_COAST = 0
 PARAR_BRAKE = 1
+
+# Limites do "turn ratio" dos comandos sincronizados (c_output.c):
+#   0    = reto
+#   -100 = para o motor da esquerda (curva fechada pra esquerda)
+#   +100 = para o motor da direita
+#   ±200 = motores em sentidos opostos (gira no próprio eixo)
+TURN_MIN = -200
+TURN_MAX = 200
 
 # Cores de LED (0-9, da UI_WRITE_SUBCODE)
 LED_PRETO = 0
@@ -167,3 +198,13 @@ def parse_resposta(dados):
 
 def ler_float(payload, offset=0):
     return struct.unpack_from('<f', payload, offset)[0]
+
+
+def ler_int32(payload, offset=0):
+    """Lê um DATA32 com sinal (contagem de encoder, por exemplo)."""
+    return struct.unpack_from('<i', payload, offset)[0]
+
+
+def ler_int8(payload, offset=0):
+    """Lê um DATA8 com sinal (flag de ocupado, por exemplo)."""
+    return struct.unpack_from('<b', payload, offset)[0]
