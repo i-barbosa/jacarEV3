@@ -38,23 +38,35 @@ PORTAS_MOTOR = {'A': p.PORTA_A, 'B': p.PORTA_B, 'C': p.PORTA_C, 'D': p.PORTA_D}
 # Alguns opcodes querem o índice da porta (0-3) em vez do bitmask.
 INDICES_MOTOR = {'A': p.INDICE_A, 'B': p.INDICE_B, 'C': p.INDICE_C, 'D': p.INDICE_D}
 PORTAS_SENSOR = {1: 0, 2: 1, 3: 2, 4: 3}  # porta física -> índice interno (0-based)
+TIPOS_SENSOR_VALIDOS = ('ultrassonico', 'toque', 'cor')
 
 
 class RoboEV3:
     def __init__(self, mac=None, canal=None, timeout=10, base=('B', 'C'),
-                 conexao=None):
+                 conexao=None, portas=None):
         """
         mac: endereço Bluetooth do EV3 (ex: '00:16:53:64:F8:B8')
         base: portas dos motores da base motriz (esquerda, direita)
         conexao: transporte pronto, no lugar do Bluetooth. Serve pra
                  testar a biblioteca sem robô ligado, e pra plugar outros
                  transportes (WiFi, USB) no futuro.
+        portas: dict opcional mapeando porta -> apelido (ou porta -> (apelido, tipo)
+                pra sensores), ex:
+                {
+                    'B': 'motor_esquerda', 'C': 'motor_direita',
+                    1: ('sensor_cor', 'cor'),          # só testa tipo 'cor'
+                    4: 'sensor_qualquer',               # testa os 3 tipos
+                }
+                Quando definido, testar_motores()/testar_sensores()/testar_tudo()
+                só mexem nas portas listadas aqui. Sem isso, testam tudo
+                (A-D, 1-4, todos os tipos) como sempre fizeram.
         """
         if conexao is None:
             if mac is None:
                 raise ValueError("Informe o mac do EV3 ou uma conexao pronta")
             conexao = ConexaoBluetooth(mac, canal=canal, timeout=timeout)
         self.conexao = conexao
+        self.portas = portas or {}
         self.definir_base(*base)
 
     def definir_base(self, esquerda='B', direita='C'):
@@ -330,15 +342,55 @@ class RoboEV3:
         print(f"Girando motor {porta} pra trás...")
         self.girar_motor(porta, velocidade=-velocidade, duracao_ms=duracao_ms)
 
+    # ---------- Portas configuradas ----------
+
+    def _apelido(self, porta):
+        """Extrai o apelido de self.portas[porta], seja ele uma string
+        solta ('nome') ou uma tupla ('nome', 'tipo')."""
+        valor = self.portas.get(porta)
+        if isinstance(valor, tuple):
+            return valor[0]
+        return valor
+
+    def _tipo_sensor_configurado(self, porta):
+        """Retorna o tipo de sensor fixado ('ultrassonico'/'toque'/'cor')
+        se a porta foi configurada como (apelido, tipo); None se não foi
+        especificado (nesse caso testa_sensores testa os 3 tipos, como
+        sempre fez)."""
+        valor = self.portas.get(porta)
+        if isinstance(valor, tuple) and len(valor) == 2:
+            tipo = valor[1]
+            if tipo not in TIPOS_SENSOR_VALIDOS:
+                raise ValueError(
+                    f"Tipo de sensor inválido pra porta {porta}: {tipo!r}. "
+                    f"Use um de {TIPOS_SENSOR_VALIDOS}"
+                )
+            return tipo
+        return None
+
+    def _portas_motor_ativas(self):
+        """Portas de motor a testar: as definidas em `portas`, ou todas
+        (A-D) se nada foi configurado."""
+        definidas = [porta for porta in self.portas if porta in PORTAS_MOTOR]
+        return definidas or list(PORTAS_MOTOR)
+
+    def _portas_sensor_ativas(self):
+        """Portas de sensor a testar: as definidas em `portas`, ou todas
+        (1-4) se nada foi configurado."""
+        definidas = [porta for porta in self.portas if porta in PORTAS_SENSOR]
+        return definidas or list(PORTAS_SENSOR)
+
     def testar_motores(self):
         print("========== TESTANDO MOTORES ==========\n")
-        for letra in PORTAS_MOTOR:
-            print(f"--- Motor na porta {letra} ---")
+        for letra in self._portas_motor_ativas():
+            apelido = self._apelido(letra)
+            rotulo = f"{letra} ({apelido})" if apelido else letra
+            print(f"--- Motor na porta {rotulo} ---")
             try:
                 self.testar_motor(letra)
-                print(f"Motor {letra} OK!\n")
+                print(f"Motor {rotulo} OK!\n")
             except Exception as e:
-                print(f"[AVISO] Sem motor (ou erro) na porta {letra}: {e}\n")
+                print(f"[AVISO] Sem motor (ou erro) na porta {rotulo}: {e}\n")
 
     # ---------- Sensores ----------
 
@@ -391,21 +443,32 @@ class RoboEV3:
         )
 
     def testar_sensores(self, tipos=('ultrassonico', 'toque', 'cor'), tempo_limite=15):
+        """
+        tipos: quais tipos testar por padrão. Se uma porta específica foi
+        configurada com (apelido, tipo), ela só é testada quando esse tipo
+        estiver na rodada atual — as outras rodadas pulam ela.
+        """
         metodos = {
             'ultrassonico': ('SENSORES ULTRASSÔNICOS', self.testar_ultrassonico),
             'toque': ('SENSORES DE TOQUE', self.testar_toque),
             'cor': ('SENSORES DE COR', self.testar_cor),
         }
+        portas_ativas = self._portas_sensor_ativas()
         for tipo in tipos:
             titulo, metodo = metodos[tipo]
             print(f"========== TESTANDO {titulo} ==========\n")
-            for numero in PORTAS_SENSOR:
-                print(f"--- {tipo} na porta {numero} ---")
+            for numero in portas_ativas:
+                tipo_fixado = self._tipo_sensor_configurado(numero)
+                if tipo_fixado and tipo_fixado != tipo:
+                    continue  # sensor tem tipo definido e não é esse agora
+                apelido = self._apelido(numero)
+                rotulo = f"{numero} ({apelido})" if apelido else numero
+                print(f"--- {tipo} na porta {rotulo} ---")
                 try:
                     metodo(numero, tempo_limite=tempo_limite)
                     print()
                 except Exception as e:
-                    print(f"[AVISO] Sem sensor (ou erro) na porta {numero}: {e}\n")
+                    print(f"[AVISO] Sem sensor (ou erro) na porta {rotulo}: {e}\n")
 
     def testar_tudo(self, tempo_limite=15):
         self.testar_motores()
