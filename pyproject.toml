@@ -33,13 +33,14 @@ dependencies = []
 
 [project.optional-dependencies]
 dev = ["pytest>=8", "pytest-cov", "ruff", "mypy"]
+docs = ["mkdocs-material"]
 
 [project.urls]
 Homepage = "https://github.com/i-barbosa/jacarEV3"
 Repository = "https://github.com/i-barbosa/jacarEV3"
 Issues = "https://github.com/i-barbosa/jacarEV3/issues"
 Changelog = "https://github.com/i-barbosa/jacarEV3/blob/main/CHANGELOG.md"
-Documentation = "https://github.com/i-barbosa/jacarEV3/tree/main/docs"
+Documentation = "https://i-barbosa.github.io/jacarEV3/"
 
 [tool.setuptools.packages.find]
 where = ["src"]

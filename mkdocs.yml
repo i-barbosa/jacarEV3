@@ -1,0 +1,54 @@
+site_name: jacarEV3
+site_description: Lib em português pra controlar o LEGO EV3 via Bluetooth
+site_url: https://i-barbosa.github.io/jacarEV3/
+repo_url: https://github.com/i-barbosa/jacarEV3
+repo_name: i-barbosa/jacarEV3
+docs_dir: docs
+edit_uri: edit/main/docs/
+
+theme:
+  name: material
+  language: pt-BR
+  logo: assets/logo.png
+  favicon: assets/logo.png
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: green
+      toggle:
+        icon: material/brightness-7
+        name: Modo escuro
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: green
+      toggle:
+        icon: material/brightness-4
+        name: Modo claro
+  features:
+    - navigation.tabs
+    - navigation.top
+    - navigation.instant
+    - search.suggest
+    - content.code.copy
+    - content.action.edit
+
+nav:
+  - Início: index.md
+  - Básico (som, LED, motor, sensor): basico.md
+  - Seguir linha: circuito.md
+  - Desviar de obstáculo: desvio.md
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight
+  - toc:
+      permalink: true
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/i-barbosa/jacarEV3
+    - icon: fontawesome/brands/python
+      link: https://pypi.org/project/jacarev3/
