@@ -15,6 +15,7 @@ import struct
 
 from . import protocolo as p
 from .conexao import ConexaoBluetooth
+from .erros import ErroDeParametro, ErroDePorta, ErroNoEV3
 
 CORES_SENSOR = {
     0: 'nenhuma', 1: 'preto', 2: 'azul', 3: 'verde', 4: 'amarelo',
@@ -41,6 +42,60 @@ PORTAS_SENSOR = {1: 0, 2: 1, 3: 2, 4: 3}  # porta física -> índice interno (0-
 TIPOS_SENSOR_VALIDOS = ('ultrassonico', 'toque', 'cor')
 
 
+# ---------- Validação de porta/parâmetro (tolerante na forma, rígida na mensagem) ----------
+
+def _parece_porta_motor(valor):
+    return isinstance(valor, str) and valor.upper() in PORTAS_MOTOR
+
+
+def _parece_porta_sensor(valor):
+    if isinstance(valor, str) and valor.isdigit():
+        valor = int(valor)
+    return valor in PORTAS_SENSOR
+
+
+def _porta_motor(porta):
+    """'b' e 'B' viram o mesmo bitmask. Qualquer outra coisa levanta
+    ErroDePorta com uma mensagem que ensina em vez de um KeyError cru."""
+    if _parece_porta_motor(porta):
+        return PORTAS_MOTOR[porta.upper()]
+    dica = (
+        " Motor usa letra ('A'-'D'); porta de sensor é que usa número (1-4)."
+        if _parece_porta_sensor(porta) else " Use 'A', 'B', 'C' ou 'D'."
+    )
+    raise ErroDePorta(f"Porta de motor inválida: {porta!r}." + dica)
+
+
+def _indice_motor(porta):
+    if _parece_porta_motor(porta):
+        return INDICES_MOTOR[porta.upper()]
+    dica = (
+        " Motor usa letra ('A'-'D'); porta de sensor é que usa número (1-4)."
+        if _parece_porta_sensor(porta) else " Use 'A', 'B', 'C' ou 'D'."
+    )
+    raise ErroDePorta(f"Porta de motor inválida: {porta!r}." + dica)
+
+
+def _porta_sensor(porta):
+    """'1' (string) e 1 (int) viram o mesmo índice interno."""
+    chave = int(porta) if isinstance(porta, str) and porta.isdigit() else porta
+    if chave in PORTAS_SENSOR:
+        return PORTAS_SENSOR[chave]
+    dica = (
+        " Sensor usa número (1-4); motor é que usa letra ('A'-'D')."
+        if _parece_porta_motor(porta) else " Use 1, 2, 3 ou 4."
+    )
+    raise ErroDePorta(f"Porta de sensor inválida: {porta!r}." + dica)
+
+
+def _validar_velocidade(velocidade):
+    """girar_motor/mover_continuo/mover_base etc empacotam velocidade num
+    DATA8 (-128 a 127) — mas o EV3 só entende -100 a 100 de verdade.
+    Sem isso, velocidade=200 vira struct.error cru."""
+    if not -100 <= velocidade <= 100:
+        raise ErroDeParametro(f"velocidade={velocidade!r} fora da faixa -100 a 100.")
+
+
 class RoboEV3:
     def __init__(self, mac=None, canal=None, timeout=10, base=('B', 'C'),
                  conexao=None, portas=None):
@@ -63,7 +118,7 @@ class RoboEV3:
         """
         if conexao is None:
             if mac is None:
-                raise ValueError("Informe o mac do EV3 ou uma conexao pronta")
+                raise ErroDeParametro("Informe o mac do EV3 ou uma conexao pronta")
             conexao = ConexaoBluetooth(mac, canal=canal, timeout=timeout)
         self.conexao = conexao
         self.portas = portas or {}
@@ -77,16 +132,16 @@ class RoboEV3:
         B), a gente inverte o sinal da direção aqui pra que "direção
         positiva vira pra direita" continue valendo.
         """
-        for letra in (esquerda, direita):
-            if letra not in PORTAS_MOTOR:
-                raise ValueError(f"Porta de motor inválida: {letra}")
+        bit_esquerda = _porta_motor(esquerda)
+        bit_direita = _porta_motor(direita)
+        esquerda, direita = esquerda.upper(), direita.upper()
         if esquerda == direita:
-            raise ValueError("A base precisa de dois motores diferentes")
+            raise ErroDeParametro("A base precisa de dois motores diferentes")
 
         self.base_esquerda = esquerda
         self.base_direita = direita
-        self._base_bits = PORTAS_MOTOR[esquerda] | PORTAS_MOTOR[direita]
-        self._base_invertida = PORTAS_MOTOR[esquerda] > PORTAS_MOTOR[direita]
+        self._base_bits = bit_esquerda | bit_direita
+        self._base_invertida = bit_esquerda > bit_direita
 
     def fechar(self):
         self.conexao.fechar()
@@ -107,7 +162,7 @@ class RoboEV3:
             dados = self.conexao.receber()
             _, ok, payload = p.parse_resposta(dados)
             if not ok:
-                raise RuntimeError("EV3 respondeu com erro pro comando")
+                raise ErroNoEV3("EV3 respondeu com erro pro comando")
             return payload
         return None
 
@@ -123,7 +178,7 @@ class RoboEV3:
     def led(self, cor):
         codigo = CODIGOS_LED.get(cor.upper())
         if codigo is None:
-            raise ValueError(f"Cor de LED desconhecida: {cor}. Opções: {list(CODIGOS_LED)}")
+            raise ErroDeParametro(f"Cor de LED desconhecida: {cor}. Opções: {list(CODIGOS_LED)}")
         cmd = p.Comando().add(p.opUI_WRITE, p.UI_WRITE_LED, p.lc0(codigo))
         self._enviar(cmd)
 
@@ -150,7 +205,8 @@ class RoboEV3:
         Gira o motor por tempo (mais simples e robusto que graus/posição).
         velocidade: -100 a 100 (negativo = sentido contrário)
         """
-        bit_porta = PORTAS_MOTOR[porta]
+        _validar_velocidade(velocidade)
+        bit_porta = _porta_motor(porta)
         acao = p.PARAR_BRAKE if frear else p.PARAR_COAST
         cmd = p.Comando().add(
             p.opOUTPUT_TIME_SPEED,
@@ -166,7 +222,7 @@ class RoboEV3:
         time.sleep(duracao_ms / 1000 + 0.1)
 
     def parar_motor(self, porta, frear=True):
-        bit_porta = PORTAS_MOTOR[porta]
+        bit_porta = _porta_motor(porta)
         acao = p.PARAR_BRAKE if frear else p.PARAR_COAST
         cmd = p.Comando().add(p.opOUTPUT_STOP, p.lc0(0), p.lc0(bit_porta), p.lc0(acao))
         self._enviar(cmd)
@@ -181,7 +237,8 @@ class RoboEV3:
         parar_motor(). Serve pra loops de controle (seguir linha, desviar
         obstáculo) onde a velocidade muda a cada iteração.
         """
-        bit_porta = PORTAS_MOTOR[porta]
+        _validar_velocidade(velocidade)
+        bit_porta = _porta_motor(porta)
         cmd = p.Comando().add(
             p.opOUTPUT_SPEED, p.lc0(0), p.lc0(bit_porta), p.lc1(velocidade),
             p.opOUTPUT_START, p.lc0(0), p.lc0(bit_porta),
@@ -200,11 +257,12 @@ class RoboEV3:
         esperar: se True, só retorna quando o motor terminar
         """
         if graus < 0:
-            raise ValueError(
+            raise ErroDeParametro(
                 "graus deve ser positivo — use velocidade negativa pra inverter o sentido"
             )
+        _validar_velocidade(velocidade)
 
-        bit_porta = PORTAS_MOTOR[porta]
+        bit_porta = _porta_motor(porta)
         acao = p.PARAR_BRAKE if frear else p.PARAR_COAST
         cmd = p.Comando().add(
             p.opOUTPUT_STEP_SPEED,
@@ -228,7 +286,7 @@ class RoboEV3:
 
     def motor_ocupado(self, porta):
         """True enquanto o motor ainda está executando um comando."""
-        bit_porta = PORTAS_MOTOR[porta]
+        bit_porta = _porta_motor(porta)
         cmd = p.Comando().add(
             p.opOUTPUT_TEST, p.lc0(0), p.lc0(bit_porta), p.gv0(0),
         )
@@ -252,7 +310,7 @@ class RoboEV3:
 
     def ler_graus_motor(self, porta):
         """Lê a contagem do encoder, em graus, desde o último zeramento."""
-        indice = INDICES_MOTOR[porta]
+        indice = _indice_motor(porta)
         cmd = p.Comando().add(
             p.opOUTPUT_GET_COUNT, p.lc0(0), p.lc0(indice), p.gv0(0),
         )
@@ -261,7 +319,7 @@ class RoboEV3:
 
     def zerar_graus_motor(self, porta):
         """Zera a contagem do encoder do motor."""
-        bit_porta = PORTAS_MOTOR[porta]
+        bit_porta = _porta_motor(porta)
         cmd = p.Comando().add(p.opOUTPUT_CLR_COUNT, p.lc0(0), p.lc0(bit_porta))
         self._enviar(cmd)
 
@@ -269,7 +327,7 @@ class RoboEV3:
 
     def _direcao_valida(self, direcao):
         if not p.TURN_MIN <= direcao <= p.TURN_MAX:
-            raise ValueError(
+            raise ErroDeParametro(
                 f"direcao deve ficar entre {p.TURN_MIN} e {p.TURN_MAX}"
             )
         return -direcao if self._base_invertida else direcao
@@ -288,6 +346,7 @@ class RoboEV3:
         Não bloqueia. Pra movimento contínuo, chama de novo antes do tempo
         acabar (ex: duracao_ms=400, reenviando a cada 100 ms).
         """
+        _validar_velocidade(velocidade)
         acao = p.PARAR_BRAKE if frear else p.PARAR_COAST
         cmd = p.Comando().add(
             p.opOUTPUT_TIME_SYNC,
@@ -309,9 +368,10 @@ class RoboEV3:
         retorna quando os motores pararem.
         """
         if graus < 0:
-            raise ValueError(
+            raise ErroDeParametro(
                 "graus deve ser positivo — use velocidade negativa pra dar ré"
             )
+        _validar_velocidade(velocidade)
 
         acao = p.PARAR_BRAKE if frear else p.PARAR_COAST
         cmd = p.Comando().add(
@@ -361,7 +421,7 @@ class RoboEV3:
         if isinstance(valor, tuple) and len(valor) == 2:
             tipo = valor[1]
             if tipo not in TIPOS_SENSOR_VALIDOS:
-                raise ValueError(
+                raise ErroDeParametro(
                     f"Tipo de sensor inválido pra porta {porta}: {tipo!r}. "
                     f"Use um de {TIPOS_SENSOR_VALIDOS}"
                 )
@@ -389,7 +449,10 @@ class RoboEV3:
             try:
                 self.testar_motor(letra)
                 print(f"Motor {rotulo} OK!\n")
-            except Exception as e:
+            except (ErroNoEV3, ErroDeParametro) as e:
+                # ErroDeConexao NÃO é pego aqui — se o Bluetooth caiu, é
+                # bem diferente de "não tem motor nessa porta", e precisa
+                # parar o scan em vez de seguir reportando porta por porta.
                 print(f"[AVISO] Sem motor (ou erro) na porta {rotulo}: {e}\n")
 
     # ---------- Sensores ----------
@@ -415,11 +478,11 @@ class RoboEV3:
         uso em loops de controle (linha, obstáculo). `modo` vem das
         constantes MODO_* de jacarev3.protocolo (ex: p.MODO_COR_REFLETIDA).
         """
-        indice = PORTAS_SENSOR[porta]
+        indice = _porta_sensor(porta)
         return self._ler_sensor(indice, modo)
 
     def testar_ultrassonico(self, porta, tempo_limite=15):
-        indice = PORTAS_SENSOR[porta]
+        indice = _porta_sensor(porta)
         self.espera_mudar(
             lambda: round(self._ler_sensor(indice, p.MODO_ULTRASSONICO_CM), 1),
             tempo_limite=tempo_limite,
@@ -427,7 +490,7 @@ class RoboEV3:
         )
 
     def testar_toque(self, porta, tempo_limite=15):
-        indice = PORTAS_SENSOR[porta]
+        indice = _porta_sensor(porta)
         self.espera_mudar(
             lambda: self._ler_sensor(indice, p.MODO_TOQUE) > 0.5,
             tempo_limite=tempo_limite,
@@ -435,7 +498,7 @@ class RoboEV3:
         )
 
     def testar_cor(self, porta, tempo_limite=15):
-        indice = PORTAS_SENSOR[porta]
+        indice = _porta_sensor(porta)
         self.espera_mudar(
             lambda: int(round(self._ler_sensor(indice, p.MODO_COR_COR))),
             tempo_limite=tempo_limite,
@@ -467,7 +530,9 @@ class RoboEV3:
                 try:
                     metodo(numero, tempo_limite=tempo_limite)
                     print()
-                except Exception as e:
+                except (ErroNoEV3, ErroDeParametro) as e:
+                    # mesmo motivo do testar_motores: queda de conexão
+                    # propaga em vez de virar "[AVISO] sem sensor".
                     print(f"[AVISO] Sem sensor (ou erro) na porta {rotulo}: {e}\n")
 
     def testar_tudo(self, tempo_limite=15):

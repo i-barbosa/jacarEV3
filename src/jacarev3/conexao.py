@@ -11,6 +11,8 @@ dependência externa — funciona no Windows (10+) e no Linux com BlueZ.
 import socket
 import itertools
 
+from .erros import ErroDeConexaoBluetooth, TempoEsgotado
+
 
 class ConexaoBluetooth:
     """Conexão RFCOMM clássica com o EV3 (a mesma usada pelo app oficial)."""
@@ -25,16 +27,44 @@ class ConexaoBluetooth:
             socket.AF_BLUETOOTH, socket.SOCK_STREAM, socket.BTPROTO_RFCOMM
         )
         self.socket.settimeout(timeout)
-        self.socket.connect((self.mac, self.canal))
+        try:
+            self.socket.connect((self.mac, self.canal))
+        except TimeoutError as e:
+            self.socket.close()
+            raise TempoEsgotado(
+                f"EV3 não respondeu em {timeout}s tentando conectar em "
+                f"{self.mac} (canal {self.canal}). Confere se o EV3 tá "
+                f"ligado e com Bluetooth ativo."
+            ) from e
+        except OSError as e:
+            self.socket.close()
+            raise ErroDeConexaoBluetooth(
+                f"Não deu pra conectar em {self.mac} (canal {self.canal}): "
+                f"{e}. Confere se o EV3 tá pareado nas configurações de "
+                f"Bluetooth do sistema."
+            ) from e
 
     def proximo_contador(self):
         return next(self._contador) & 0xFFFF
 
     def enviar(self, pacote):
-        self.socket.send(pacote)
+        try:
+            self.socket.sendall(pacote)
+        except TimeoutError as e:
+            raise TempoEsgotado("Demorou demais pra mandar o comando pro EV3.") from e
+        except OSError as e:
+            raise ErroDeConexaoBluetooth(f"Conexão com o EV3 caiu ao enviar: {e}") from e
 
     def receber(self, tamanho_max=1024):
-        return self.socket.recv(tamanho_max)
+        try:
+            dados = self.socket.recv(tamanho_max)
+        except TimeoutError as e:
+            raise TempoEsgotado("EV3 não respondeu a tempo.") from e
+        except OSError as e:
+            raise ErroDeConexaoBluetooth(f"Conexão com o EV3 caiu ao receber: {e}") from e
+        if not dados:
+            raise ErroDeConexaoBluetooth("EV3 fechou a conexão (recv vazio).")
+        return dados
 
     def fechar(self):
         try:

@@ -4,6 +4,36 @@ Todas as mudanças notáveis desse projeto são documentadas aqui.
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/),
 versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
+## [0.4.2] - 2026-09-26
+
+### Adicionado
+- `jacarev3.erros` — hierarquia de exceções própria (`ErroJacare` na
+  base). Cada uma continua herdando da exceção padrão mais parecida
+  (`ValueError`, `KeyError`, `OSError`, `TimeoutError`), então código que
+  já fazia `except ValueError:`/`except KeyError:` continua funcionando.
+- Validação de velocidade (-100 a 100) em `girar_motor`, `mover_continuo`,
+  `girar_motor_graus`, `mover_base` e `mover_base_graus` — antes,
+  `velocidade=200` virava `struct.error` cru.
+- `ConexaoBluetooth` agora traduz falha de conexão/timeout/queda no meio
+  do envio em `ErroDeConexaoBluetooth`/`TempoEsgotado`, com mensagem que
+  aponta o que conferir (pareamento, EV3 ligado). Antes era `OSError`
+  cru sem contexto.
+- 35 testes novos em `tests/test_erros.py`.
+
+### Corrigido
+- Porta de motor/sensor errada agora levanta `ErroDePorta` com mensagem
+  que ensina — inclusive quando é o erro clássico de confundir letra
+  (motor) com número (sensor). Antes: `KeyError: 'b'` cru, e
+  `girar_motor('b')` minúsculo simplesmente não funcionava.
+- `testar_motores()`/`testar_sensores()` não escondem mais uma queda de
+  conexão como "[AVISO] Sem motor/sensor" — só erro do próprio EV3
+  (porta vazia, tipo errado) é reportado por porta; queda de Bluetooth
+  interrompe o scan inteiro.
+- `_enviar()` levanta `ErroNoEV3` (era `RuntimeError` genérico) quando o
+  EV3 responde tipo 0x04.
+- `parse_resposta()` levanta `ErroDeProtocolo` (era `ValueError`
+  genérico) pra resposta curta demais.
+
 ## [0.4.1] - 2026-09-26
 
 ### Adicionado

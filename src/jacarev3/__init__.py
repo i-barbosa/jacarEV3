@@ -10,8 +10,8 @@ O `pyproject.toml` lê a versão daqui (setuptools dynamic), então esse é o
 único lugar onde o número de versão aparece.
 """
 
-from . import fontes, protocolo, teclado, topicos
+from . import erros, fontes, protocolo, teclado, topicos
 from .robo import RoboEV3
 
-__all__ = ["RoboEV3", "fontes", "protocolo", "teclado", "topicos"]
-__version__ = "0.4.1"
+__all__ = ["RoboEV3", "erros", "fontes", "protocolo", "teclado", "topicos"]
+__version__ = "0.4.2"

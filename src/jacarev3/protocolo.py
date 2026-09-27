@@ -30,6 +30,8 @@ Resposta:
 
 import struct
 
+from .erros import ErroDeProtocolo
+
 DIRECT_COMMAND_REPLY = 0x00
 DIRECT_COMMAND_NO_REPLY = 0x80
 DIRECT_REPLY_OK = 0x02
@@ -189,7 +191,10 @@ class Comando:
 def parse_resposta(dados):
     """Retorna (contador, ok, payload) de uma resposta do EV3."""
     if len(dados) < 5:
-        raise ValueError("Resposta curta demais")
+        raise ErroDeProtocolo(
+            f"Resposta do EV3 curta demais ({len(dados)} bytes, precisa de "
+            f"pelo menos 5). Provável sinal de conexão instável."
+        )
     tamanho, contador, tipo = struct.unpack('<HHB', dados[:5])
     ok = (tipo == DIRECT_REPLY_OK)
     payload = dados[5:5 + tamanho - 3]
