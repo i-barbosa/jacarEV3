@@ -9,6 +9,12 @@ melhor que outra.
 Cada nível pressupõe que você já leu o tutorial do módulo. Se ainda não
 leu, começa por ele — as atividades usam a API que ele explica.
 
+!!! tip "Travou?"
+    Tem [respostas](gabaritos.md) — pelo menos 2 jeitos diferentes de
+    resolver cada atividade. Mas tenta sozinho primeiro; comparar sua
+    solução com outra depois de já ter pensado ensina mais do que ler a
+    resposta de cara.
+
 <div class="grid cards" markdown>
 
 -   :material-numeric-1-circle-outline: **Nível 1 — Roda e observa**
