@@ -56,7 +56,7 @@ class FonteRoteiro:
 
 def rodar(robo, roteiro, **kwargs):
     fonte = FonteRoteiro(roteiro)
-    opcoes = dict(intervalo=0, expira=10, velocidade=50, giro=100)
+    opcoes = {"intervalo": 0, "expira": 10, "velocidade": 50, "giro": 100}
     opcoes.update(kwargs)
     controle.controle_remoto(robo, fonte=fonte, **opcoes)
     return fonte
@@ -235,9 +235,8 @@ def test_pygame_botao_sair_encerra():
 
 
 def test_pygame_sem_controle_conectado_recusa():
-    with pytest.raises(RuntimeError):
-        with FontePygame(pygame=PygameFalso(n_joysticks=0)):
-            pass
+    with pytest.raises(RuntimeError), FontePygame(pygame=PygameFalso(n_joysticks=0)):
+        pass
 
 
 def test_pygame_entra_e_sai_inicializa_e_desmonta_o_joystick():

@@ -17,7 +17,6 @@ import pytest
 from jacarev3 import protocolo as p
 from jacarev3.robo import RoboEV3
 
-
 # ---------------------------------------------------------------- fixtures
 
 

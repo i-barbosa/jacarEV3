@@ -84,7 +84,14 @@ API — nomes de método, parâmetros, mensagens de erro — em português.
 
     Sensor ultrassônico pra parar, girar e desviar de algo no caminho.
 
--   :material-numeric-4-circle-outline: **[Controle remoto](controle.md)**
+-   :material-numeric-4-circle-outline: **[Precisão de motor](base-motriz.md)**
+
+    ---
+
+    Encoder, motor por graus/voltas e base sincronizada — pra andar
+    uma distância exata, não só "por um tempinho".
+
+-   :material-numeric-5-circle-outline: **[Controle remoto](controle.md)**
 
     ---
 
@@ -96,6 +103,10 @@ API — nomes de método, parâmetros, mensagens de erro — em português.
 Já leu os tutoriais? [**Atividades**](atividades.md) tem exercícios de
 cada módulo em 4 níveis de dificuldade, do "só roda e vê" até um
 projeto aberto.
+
+**Dando aula?** [Planos de 50 minutos prontos](aulas/index.md), e
+[como rodar sem robô físico](sem-robo.md) pra turma inteira praticar ao
+mesmo tempo. **Em time de competição?** [Precisão e repetibilidade](competicao.md).
 
 ## Padrão dos tutoriais
 

@@ -24,23 +24,29 @@ Como o robô para sozinho:
     pode nunca chegar.
 """
 
-import time
+from __future__ import annotations
 
-from ..fontes import SAIR, FonteTeclado
+import time
+from typing import TYPE_CHECKING, Optional, Tuple
+
+from ..fontes import SAIR, Fonte, FonteTeclado
+
+if TYPE_CHECKING:
+    from ..robo import RoboEV3
 
 __all__ = ["controle_remoto"]
 
 
 def controle_remoto(
-    robo,
-    fonte=None,
-    velocidade=35,
-    giro=100,
-    janela_ms=400,
-    intervalo=0.1,
-    expira=0.25,
-    verboso=False,
-):
+    robo: "RoboEV3",
+    fonte: Optional[Fonte] = None,
+    velocidade: int = 35,
+    giro: int = 100,
+    janela_ms: int = 400,
+    intervalo: float = 0.1,
+    expira: float = 0.25,
+    verboso: bool = False,
+) -> None:
     """
     Dirige a base motriz até a fonte pedir pra sair (ou Ctrl+C).
 
@@ -63,7 +69,7 @@ def controle_remoto(
         raise ValueError("intervalo precisa ser menor que janela_ms, senão o robô engasga")
 
     fonte = fonte if fonte is not None else FonteTeclado()
-    estado = None
+    estado: Optional[Tuple[float, float]] = None
     desde = 0.0
     ultimo_envio = 0.0
 

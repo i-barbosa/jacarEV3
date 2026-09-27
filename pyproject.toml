@@ -35,6 +35,7 @@ dependencies = []
 dev = ["pytest>=8", "pytest-cov", "ruff", "mypy"]
 docs = ["mkdocs-material"]
 pygame = ["pygame>=2"]
+usb = ["hidapi>=0.14"]
 
 [project.urls]
 Homepage = "https://github.com/i-barbosa/jacarEV3"
@@ -46,9 +47,29 @@ Documentation = "https://i-barbosa.github.io/jacarEV3/"
 [tool.setuptools.packages.find]
 where = ["src"]
 
+[tool.setuptools.package-data]
+jacarev3 = ["py.typed"]
+
 [tool.setuptools.dynamic]
 version = {attr = "jacarev3.__version__"}
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py39"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "C4", "SIM", "RUF"]
+
+[tool.mypy]
+# O checker mais recente já não valida contra 3.9 (fim de vida) — a lib
+# continua suportando 3.9 em runtime (requires-python acima), isso aqui
+# só ajusta qual versão o mypy assume ao checar.
+python_version = "3.10"
+files = ["src/jacarev3"]
+ignore_missing_imports = true
+warn_unused_ignores = true
+warn_redundant_casts = true

@@ -1,0 +1,51 @@
+name: 🤖 Validação em hardware físico
+description: Você testou algo da lib num EV3 de verdade — funcionou ou não
+labels: ["hardware-validation"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Isso é o tipo de contribuição mais valiosa que o projeto pode
+        receber agora — quase nada aqui foi validado em hardware real
+        ainda. Reporta mesmo se deu tudo certo.
+
+  - type: dropdown
+    id: transporte
+    attributes:
+      label: Transporte usado
+      options:
+        - Bluetooth
+        - USB
+    validations:
+      required: true
+
+  - type: textarea
+    id: o-que-testou
+    attributes:
+      label: O que você testou
+      description: Método(s), tópico (seguir_linha, desviar_obstaculo, controle_remoto...), ou "testar_tudo()".
+    validations:
+      required: true
+
+  - type: dropdown
+    id: resultado
+    attributes:
+      label: Funcionou como esperado?
+      options:
+        - Sim, tudo certo
+        - Parcialmente (descreve abaixo)
+        - Não funcionou
+    validations:
+      required: true
+
+  - type: textarea
+    id: detalhes
+    attributes:
+      label: Detalhes
+      description: Mensagem de erro, comportamento estranho, ou "sem observação, funcionou liso".
+
+  - type: input
+    id: modelo-ev3
+    attributes:
+      label: Modelo/edição do EV3 (se souber)
+      placeholder: "ex: Home Edition 31313"

@@ -15,7 +15,10 @@ Precisa ser usado como gerenciador de contexto: no Linux ele coloca o
 terminal em modo cru e o __exit__ é quem devolve a configuração antiga.
 """
 
+from __future__ import annotations
+
 import sys
+from typing import Literal, Optional
 
 __all__ = ["Teclado"]
 
@@ -26,13 +29,13 @@ if sys.platform == "win32":
     class Teclado:
         """Lê teclas no Windows via msvcrt."""
 
-        def __enter__(self):
+        def __enter__(self) -> "Teclado":
             return self
 
-        def __exit__(self, *exc):
+        def __exit__(self, *exc: object) -> Literal[False]:
             return False
 
-        def tecla(self):
+        def tecla(self) -> Optional[str]:
             """Devolve a tecla apertada em minúscula, ou None."""
             if msvcrt.kbhit():
                 return msvcrt.getwch().lower()
@@ -46,17 +49,17 @@ else:
     class Teclado:
         """Lê teclas no Linux/macOS colocando o terminal em modo cru."""
 
-        def __enter__(self):
+        def __enter__(self) -> "Teclado":
             self._fd = sys.stdin.fileno()
             self._config_antiga = termios.tcgetattr(self._fd)
             tty.setcbreak(self._fd)
             return self
 
-        def __exit__(self, *exc):
+        def __exit__(self, *exc: object) -> Literal[False]:
             termios.tcsetattr(self._fd, termios.TCSADRAIN, self._config_antiga)
             return False
 
-        def tecla(self):
+        def tecla(self) -> Optional[str]:
             """Devolve a tecla apertada em minúscula, ou None."""
             pronto, _, _ = select.select([sys.stdin], [], [], 0)
             if pronto:

@@ -11,14 +11,17 @@ exemplo, continua funcionando sem mudar nada.
 Hierarquia:
 
     ErroJacare
-    ├── ErroDeConexao(..., OSError)        — Bluetooth não conectou/caiu
+    ├── ErroDeConexao(..., OSError)        — não conectou/caiu, transporte não especificado
     │   ├── ErroDeConexaoBluetooth         — especificamente pelo transporte RFCOMM
+    │   ├── ErroDeConexaoUSB               — especificamente pelo transporte USB HID
     │   └── TempoEsgotado(..., TimeoutError)
     ├── ErroDeProtocolo                    — resposta do EV3 não bateu
     │   └── ErroNoEV3                      — o EV3 respondeu "erro" (tipo 0x04)
     └── ErroDeParametro(..., ValueError)   — você passou um valor inválido
         └── ErroDePorta(..., KeyError)     — porta de motor/sensor errada
 """
+
+from __future__ import annotations
 
 
 class ErroJacare(Exception):
@@ -33,6 +36,11 @@ class ErroDeConexaoBluetooth(ErroDeConexao):
     """Falha específica do transporte Bluetooth clássico (RFCOMM). Separado
     de ErroDeConexao pra quando WiFi/USB existirem, cada transporte poder
     ter sua própria subclasse sem quebrar quem já pega ErroDeConexao."""
+
+
+class ErroDeConexaoUSB(ErroDeConexao):
+    """Falha específica do transporte USB (HID) — dispositivo não achado,
+    relatório grande demais, etc."""
 
 
 class TempoEsgotado(ErroDeConexao, TimeoutError):
@@ -58,7 +66,7 @@ class ErroDePorta(ErroDeParametro, KeyError):
     """Porta de motor ou sensor que não existe, ou porta do tipo errado
     (letra onde era pra ser número, ou vice-versa)."""
 
-    def __str__(self):
+    def __str__(self) -> str:
         # KeyError.__str__ embrulha a mensagem em repr() (aspas extras);
         # aqui a mensagem já é a frase inteira, então devolve ela crua.
         return self.args[0] if self.args else super().__str__()

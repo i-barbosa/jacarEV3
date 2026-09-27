@@ -4,6 +4,50 @@ Todas as mudanças notáveis desse projeto são documentadas aqui.
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/),
 versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
+## [0.5.0] - 2026-09-27
+
+### Adicionado
+- `jacarev3.falso.ConexaoFalsa` — "robô de mentira": mesmo contrato de
+  `ConexaoBluetooth`/`ConexaoUSB`, mas sem tocar em hardware. Sensor
+  configurável por porta/modo (valor fixo ou função), `verboso=True`
+  imprime cada comando reconhecido. Serve pra dar aula sem robô físico
+  e pra teste automatizado. Ver [docs/sem-robo.md].
+- `jacarev3.conexao.ConexaoUSB` — transporte USB via HID (`hidapi`,
+  extra `jacarev3[usb]`). VID/PID e formato do relatório HID
+  (report ID + 1024 bytes) confirmados contra duas implementações de
+  referência independentes já testadas em hardware (BrianPeek/legoev3
+  em C#, ChristophGaukel/ev3-python3 em Python) — **ainda não testado
+  fisicamente nessa lib**. Ver [docs/usb.md].
+- `jacarev3.transporte.Transporte` — `typing.Protocol` formalizando o
+  contrato que `RoboEV3.conexao` já esperava implicitamente.
+- **Type hints em 100% do código**, `py.typed` publicado no pacote —
+  `mypy` roda limpo em `src/jacarev3` inteiro, e agora faz parte do CI.
+- CI (`testes.yml`) ganha matriz de sistema operacional
+  (`ubuntu-latest` + `windows-latest`) e um job de lint/type
+  (`ruff check` + `mypy`), que também gateia o publish no PyPI.
+- Docs novos: [Precisão de motor](docs/base-motriz.md) (encoder, motor
+  por graus, base sincronizada — só existia em código, sem tutorial),
+  [Conectar por USB](docs/usb.md), [Dar aula sem robô](docs/sem-robo.md),
+  [Competição — OBR/FLL](docs/competicao.md), e 3 planos de aula de
+  50 minutos em `docs/aulas/`.
+- `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `SECURITY.md`, templates de
+  issue (bug, funcionalidade, validação em hardware) e de PR,
+  `.github/dependabot.yml`.
+
+### Corrigido
+- Dois lint nits pré-existentes (`RUF046`, import não ordenado).
+- `topicos.controle`/`topicos.circuito`/`topicos.desvio` não tinham
+  `robo` tipado como `RoboEV3` — nada mudou em runtime, só ficou
+  checável estaticamente.
+
+### Observado durante a tipagem
+- `velocidade` sempre precisou ser `int` de verdade (a codificação usa
+  `struct.pack('<b', ...)`, que não aceita `float`) — passar um valor
+  fracionário sempre quebrou com `struct.error` cru, em qualquer versão
+  anterior. Isso não mudou; agora é só declarado explicitamente
+  (`velocidade: int`), então o `mypy` acusa antes de rodar, em vez de
+  descobrir em tempo de execução.
+
 ## [0.4.2] - 2026-09-26
 
 ### Adicionado

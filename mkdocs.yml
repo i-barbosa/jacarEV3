@@ -52,9 +52,18 @@ nav:
   - Básico (som, LED, motor, sensor): basico.md
   - Seguir linha: circuito.md
   - Desviar de obstáculo: desvio.md
+  - Precisão de motor (encoder): base-motriz.md
   - Controle remoto: controle.md
+  - Conectar por USB: usb.md
+  - Dar aula sem robô: sem-robo.md
+  - Competição (OBR, FLL): competicao.md
   - Atividades: atividades.md
   - Respostas: gabaritos.md
+  - Aulas:
+      - Visão geral: aulas/index.md
+      - "Aula 1 — Primeiro contato": aulas/aula-01-primeiro-contato.md
+      - "Aula 2 — Sensores": aulas/aula-02-sensores.md
+      - "Aula 3 — Seguir linha": aulas/aula-03-seguir-linha.md
 
 markdown_extensions:
   - attr_list

@@ -4,22 +4,28 @@ jacarev3.topicos.desvio
 Andar reto até achar obstáculo (sensor ultrassônico) e desviar.
 """
 
+from __future__ import annotations
+
 import time
+from typing import TYPE_CHECKING, Optional
 
 from .. import protocolo as p
 
+if TYPE_CHECKING:
+    from ..robo import RoboEV3
+
 
 def desviar_obstaculo(
-    robo,
-    porta_sensor=4,
-    porta_motor_esquerdo='B',
-    porta_motor_direito='C',
-    velocidade=30,
-    distancia_minima_cm=15,
-    tempo_giro_s=0.6,
-    duracao_s=None,
-    verboso=False,
-):
+    robo: "RoboEV3",
+    porta_sensor: object = 4,
+    porta_motor_esquerdo: object = 'B',
+    porta_motor_direito: object = 'C',
+    velocidade: int = 30,
+    distancia_minima_cm: float = 15,
+    tempo_giro_s: float = 0.6,
+    duracao_s: Optional[float] = None,
+    verboso: bool = False,
+) -> None:
     """
     Anda reto; quando o ultrassônico detecta algo mais perto que
     distancia_minima_cm, para, gira pra um lado por tempo_giro_s, e segue

@@ -9,21 +9,27 @@ Montagem esperada: sensor de cor apontando pro chão, robô com 2 motores
 (esquerda/direita) nas portas indicadas.
 """
 
+from __future__ import annotations
+
 import time
+from typing import TYPE_CHECKING, List, Optional
 
 from .. import protocolo as p
 
+if TYPE_CHECKING:
+    from ..robo import RoboEV3
+
 
 def seguir_linha(
-    robo,
-    porta_sensor=1,
-    porta_motor_esquerdo='B',
-    porta_motor_direito='C',
-    velocidade=25,
-    limiar=None,
-    duracao_s=None,
-    verboso=False,
-):
+    robo: "RoboEV3",
+    porta_sensor: object = 1,
+    porta_motor_esquerdo: object = 'B',
+    porta_motor_direito: object = 'C',
+    velocidade: int = 25,
+    limiar: Optional[float] = None,
+    duracao_s: Optional[float] = None,
+    verboso: bool = False,
+) -> None:
     """
     Segue uma linha preta no chão branco (ou vice-versa) usando controle
     bang-bang: se o sensor vê "claro", gira pra um lado; se vê "escuro",
@@ -73,7 +79,9 @@ def seguir_linha(
         robo.parar_motor(porta_motor_direito)
 
 
-def calibrar(robo, porta_sensor, amostras=20, intervalo=0.1):
+def calibrar(
+    robo: "RoboEV3", porta_sensor: object, amostras: int = 20, intervalo: float = 0.1
+) -> float:
     """
     Calibração simples: pede pra passar o sensor por cima do "claro" e do
     "escuro" e calcula o ponto médio como limiar. Chamada automaticamente
@@ -94,8 +102,10 @@ def calibrar(robo, porta_sensor, amostras=20, intervalo=0.1):
     return limiar
 
 
-def _media_leituras(robo, porta_sensor, amostras, intervalo):
-    valores = []
+def _media_leituras(
+    robo: "RoboEV3", porta_sensor: object, amostras: int, intervalo: float
+) -> float:
+    valores: List[float] = []
     for _ in range(amostras):
         valores.append(robo.ler_sensor(porta_sensor, p.MODO_COR_REFLETIDA))
         time.sleep(intervalo)

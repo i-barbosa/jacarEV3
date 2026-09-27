@@ -28,6 +28,8 @@ Resposta:
   byte 5+:  buffer de variáveis globais (o que você pediu pra devolver)
 """
 
+from __future__ import annotations
+
 import struct
 
 from .erros import ErroDeProtocolo
@@ -45,31 +47,31 @@ DIRECT_REPLY_ERROR = 0x04
 # GV0 (variável global curta) = 0x60 | índice — confirmado batendo com os
 # bytes de exemplo do PDF (leitura de sensor devolvendo em GV0(0) = byte 0x60).
 
-def lc0(v):
+def lc0(v: int) -> bytes:
     return bytes([v & 0x3F])
 
 
-def lc1(v):
+def lc1(v: int) -> bytes:
     return bytes([0x81]) + struct.pack('<b', v)
 
 
-def lc2(v):
+def lc2(v: int) -> bytes:
     return bytes([0x82]) + struct.pack('<h', v)
 
 
-def lc4(v):
+def lc4(v: int) -> bytes:
     return bytes([0x83]) + struct.pack('<i', v)
 
 
-def lcs(texto):
+def lcs(texto: str) -> bytes:
     return bytes([0x84]) + texto.encode('ascii') + b'\x00'
 
 
-def gv0(indice):
+def gv0(indice: int) -> bytes:
     return bytes([0x60 | (indice & 0x1F)])
 
 
-def lc_auto(v):
+def lc_auto(v: int) -> bytes:
     """Escolhe automaticamente o menor encoding que cabe o valor."""
     if -32 <= v <= 31:
         return lc0(v)
@@ -166,15 +168,15 @@ MODO_COR_COR = 2          # 0-7: nenhuma, preto, azul, verde, amarelo, vermelho,
 class Comando:
     """Monta um Direct Command byte a byte."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.bytecode = b''
 
-    def add(self, *partes):
+    def add(self, *partes: int | bytes | bytearray) -> Comando:
         for p in partes:
             self.bytecode += p if isinstance(p, (bytes, bytearray)) else bytes([p])
         return self
 
-    def montar(self, contador, com_resposta=False, bytes_globais=0):
+    def montar(self, contador: int, com_resposta: bool = False, bytes_globais: int = 0) -> bytes:
         tipo = DIRECT_COMMAND_REPLY if com_resposta else DIRECT_COMMAND_NO_REPLY
         # aloca variáveis globais: 10 bits, byte5 = bits baixos, byte6 bits 0-1 = bits altos
         header_vars = bytes([
@@ -188,7 +190,7 @@ class Comando:
         return struct.pack('<HH', tamanho, contador) + corpo
 
 
-def parse_resposta(dados):
+def parse_resposta(dados: bytes) -> tuple[int, bool, bytes]:
     """Retorna (contador, ok, payload) de uma resposta do EV3."""
     if len(dados) < 5:
         raise ErroDeProtocolo(
@@ -201,15 +203,15 @@ def parse_resposta(dados):
     return contador, ok, payload
 
 
-def ler_float(payload, offset=0):
+def ler_float(payload: bytes, offset: int = 0) -> float:
     return struct.unpack_from('<f', payload, offset)[0]
 
 
-def ler_int32(payload, offset=0):
+def ler_int32(payload: bytes, offset: int = 0) -> int:
     """Lê um DATA32 com sinal (contagem de encoder, por exemplo)."""
     return struct.unpack_from('<i', payload, offset)[0]
 
 
-def ler_int8(payload, offset=0):
+def ler_int8(payload: bytes, offset: int = 0) -> int:
     """Lê um DATA8 com sinal (flag de ocupado, por exemplo)."""
     return struct.unpack_from('<b', payload, offset)[0]

@@ -1,0 +1,24 @@
+name: ✨ Sugestão de funcionalidade
+description: Uma ideia de algo que a lib poderia fazer
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problema
+    attributes:
+      label: Que problema isso resolve
+      description: O que você não consegue fazer hoje com a lib?
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposta
+    attributes:
+      label: Como você imagina que funcionaria
+      description: Se tiver ideia de nome de método/assinatura, mostra aqui. Lembra que a API é só em português.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternativas
+    attributes:
+      label: Alternativas que você já tentou

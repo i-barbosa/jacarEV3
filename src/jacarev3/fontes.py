@@ -19,18 +19,62 @@ Escrever uma fonte nova (gamepad, celular, sensor) é implementar essas
 duas coisas — o loop de controle não muda.
 """
 
-import time
+from __future__ import annotations
+
+from enum import Enum, auto
+from typing import (
+    Any,
+    Dict,
+    Final,
+    Literal,
+    Optional,
+    Protocol,
+    Tuple,
+    Union,
+    runtime_checkable,
+)
 
 from .teclado import Teclado
 
-__all__ = ["SAIR", "FonteTeclado", "FontePygame", "FonteUDP", "TECLAS_PADRAO"]
+__all__ = ["SAIR", "TECLAS_PADRAO", "Fonte", "FontePygame", "FonteTeclado", "FonteUDP", "Leitura"]
 
 
-SAIR = object()   # sentinela devolvida por ler() pra encerrar o controle
+class _Sinal(Enum):
+    """Existe só pra SAIR ter um tipo de verdade — Enum de 1 membro é o
+    jeito que o mypy sabe estreitar corretamente num `is SAIR`, ao
+    contrário de um `object()` cru ou uma classe sentinela comum."""
+
+    SAIR = auto()
+
+    def __repr__(self) -> str:
+        return "SAIR"
+
+
+SAIR: Final = _Sinal.SAIR   # sentinela devolvida por ler() pra encerrar o controle
+
+# O que ler() pode devolver: nada de novo, um estado (velocidade, giro),
+# ou o pedido pra encerrar.
+Leitura = Union[Tuple[float, float], _Sinal, None]
+
+
+@runtime_checkable
+class Fonte(Protocol):
+    """O que `controle_remoto()` precisa de uma fonte. `ajuda()` é
+    opcional (checado com `hasattr`), por isso não faz parte do
+    contrato formal aqui."""
+
+    def __enter__(self) -> "Fonte":
+        ...
+
+    def __exit__(self, *exc: object) -> bool:
+        ...
+
+    def ler(self) -> Leitura:
+        ...
 
 
 # tecla -> (fator de velocidade, fator de direção)
-TECLAS_PADRAO = {
+TECLAS_PADRAO: Dict[str, Tuple[float, float]] = {
     'w': (1, 0),
     's': (-1, 0),
     'a': (1, -1),
@@ -46,22 +90,29 @@ class FonteTeclado:
     digita nada, e quem decide que o dedo saiu é a expiração do loop.
     """
 
-    def __init__(self, teclas=None, tecla_parar=' ', tecla_sair='q'):
+    def __init__(
+        self,
+        teclas: Optional[Dict[str, Tuple[float, float]]] = None,
+        tecla_parar: str = ' ',
+        tecla_sair: str = 'q',
+    ) -> None:
         self.teclas = dict(teclas or TECLAS_PADRAO)
         self.tecla_parar = tecla_parar
         self.tecla_sair = tecla_sair
-        self._teclado = None
+        self._teclado: Optional[Teclado] = None
 
-    def __enter__(self):
+    def __enter__(self) -> "FonteTeclado":
         self._teclado = Teclado().__enter__()
         return self
 
-    def __exit__(self, *exc):
+    def __exit__(self, *exc: object) -> Literal[False]:
+        assert self._teclado is not None
         self._teclado.__exit__(*exc)
         self._teclado = None
         return False
 
-    def ler(self):
+    def ler(self) -> Leitura:
+        assert self._teclado is not None
         tecla = self._teclado.tecla()
         if tecla is None:
             return None
@@ -71,7 +122,7 @@ class FonteTeclado:
             return (0, 0)
         return self.teclas.get(tecla)
 
-    def ajuda(self):
+    def ajuda(self) -> str:
         return "W frente, S ré, A esquerda, D direita, espaço para, Q sai"
 
 
@@ -92,15 +143,15 @@ class FontePygame:
 
     def __init__(
         self,
-        indice=0,
-        eixo_giro=0,
-        eixo_lt=4,
-        eixo_rt=5,
-        botao_sair=0,
-        zona_morta_giro=0.1,
-        taxa_suavizacao=0.25,
-        pygame=None,
-    ):
+        indice: int = 0,
+        eixo_giro: int = 0,
+        eixo_lt: int = 4,
+        eixo_rt: int = 5,
+        botao_sair: int = 0,
+        zona_morta_giro: float = 0.1,
+        taxa_suavizacao: float = 0.25,
+        pygame: Optional[Any] = None,
+    ) -> None:
         """
         indice: qual joystick usar, se tiver mais de um plugado
         eixo_giro: eixo do analógico usado pra curva (padrão: esquerdo,
@@ -122,12 +173,12 @@ class FontePygame:
         self.botao_sair = botao_sair
         self.zona_morta_giro = zona_morta_giro
         self.taxa_suavizacao = taxa_suavizacao
-        self._pygame = pygame
-        self._joystick = None
+        self._pygame: Optional[Any] = pygame
+        self._joystick: Optional[Any] = None
         self._vel_atual = 0.0
         self._giro_atual = 0.0
 
-    def __enter__(self):
+    def __enter__(self) -> "FontePygame":
         if self._pygame is None:
             import pygame
 
@@ -147,13 +198,15 @@ class FontePygame:
         self._giro_atual = 0.0
         return self
 
-    def __exit__(self, *exc):
+    def __exit__(self, *exc: object) -> Literal[False]:
+        assert self._pygame is not None
         self._pygame.joystick.quit()
         self._pygame.quit()
         self._joystick = None
         return False
 
-    def ler(self):
+    def ler(self) -> Leitura:
+        assert self._pygame is not None and self._joystick is not None
         self._pygame.event.pump()
         joystick = self._joystick
 
@@ -170,17 +223,17 @@ class FontePygame:
         return (self._vel_atual, self._giro_atual)
 
     @staticmethod
-    def _normalizar_gatilho(valor):
+    def _normalizar_gatilho(valor: float) -> float:
         """Gatilho pode vir de -1 (solto) a 1 (fundo) OU de 0 a 1, depende
         do driver. Normaliza pra sempre ficar 0 (solto) a 1 (fundo)."""
         if valor < -0.05:
             return (valor + 1) / 2
         return max(0.0, valor)
 
-    def _zona_morta(self, valor):
+    def _zona_morta(self, valor: float) -> float:
         return 0.0 if abs(valor) < self.zona_morta_giro else valor
 
-    def ajuda(self):
+    def ajuda(self) -> str:
         return "RT acelera, LT dá ré, analógico esquerdo faz curva, botão pra sair"
 
 
@@ -200,13 +253,13 @@ class FonteUDP:
     porque o próximo já traz o estado inteiro de novo.
     """
 
-    def __init__(self, porta=9000, endereco='0.0.0.0'):
+    def __init__(self, porta: int = 9000, endereco: str = '0.0.0.0') -> None:
         self.porta = porta
         self.endereco = endereco
-        self.socket = None
-        self.ultimo_remetente = None
+        self.socket: Optional[Any] = None
+        self.ultimo_remetente: Optional[Tuple[str, int]] = None
 
-    def __enter__(self):
+    def __enter__(self) -> "FonteUDP":
         import socket
 
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -215,13 +268,15 @@ class FonteUDP:
         self.socket.setblocking(False)
         return self
 
-    def __exit__(self, *exc):
+    def __exit__(self, *exc: object) -> Literal[False]:
+        assert self.socket is not None
         self.socket.close()
         self.socket = None
         return False
 
-    def ler(self):
+    def ler(self) -> Leitura:
         """Pega o datagrama mais recente e descarta os atrasados."""
+        assert self.socket is not None
         ultimo = None
         while True:
             try:
@@ -236,15 +291,17 @@ class FonteUDP:
         return self._interpretar(ultimo)
 
     @staticmethod
-    def _interpretar(dados):
+    def _interpretar(dados: bytes) -> Union[Tuple[float, float], None]:
         try:
             partes = dados.decode('ascii').strip().split()
             velocidade, direcao = float(partes[0]), float(partes[1])
         except (UnicodeDecodeError, ValueError, IndexError):
             return None   # pacote estranho: ignora, o próximo vem logo
 
-        limite = lambda v: max(-1.0, min(1.0, v))
+        def limite(v: float) -> float:
+            return max(-1.0, min(1.0, v))
+
         return (limite(velocidade), limite(direcao))
 
-    def ajuda(self):
+    def ajuda(self) -> str:
         return f"Esperando o controle mandar pacotes UDP na porta {self.porta}"

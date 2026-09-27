@@ -22,6 +22,12 @@ jobs:
       - name: Rodar os testes
         run: pytest -q
 
+      - name: ruff
+        run: ruff check src/ tests/
+
+      - name: mypy
+        run: mypy src/jacarev3
+
   build-and-publish:
     needs: testes
     runs-on: ubuntu-latest
