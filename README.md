@@ -42,3 +42,19 @@ Issues e PRs são bem-vindos em
 ## Licença
 
 MIT — veja [LICENSE](https://github.com/i-barbosa/jacarEV3/blob/main/LICENSE).
+
+## Colaboradores
+
+<ul align="left">
+  <li>Ítalo Vinicius (mantenedor) <a href="https://github.com/i-barbosa" target="_blank"><img src="https://img.shields.io/badge/GitHub-000000?style=for-the-badge&logo=github&logoColor=white" height="16"/></a></li>
+  <li>Miguel Arcanjo <a href="https://github.com/MiguelAR098" target="_blank"><img src="https://img.shields.io/badge/GitHub-000000?style=for-the-badge&logo=github&logoColor=white" height="16"/></a></li>
+  <li>Adrews <a href="https://github.com/Adrews1" target="_blank"><img src="https://img.shields.io/badge/GitHub-000000?style=for-the-badge&logo=github&logoColor=white" height="16"/></a></li>
+</ul>
+
+| Colaborador | Commits | Linhas | Contribuiu com |
+| :--- | :---: | :--- | :--- |
+| **Ítalo Vinicius** | 14 | +3520 / -323 | Protocolo próprio, `RoboEV3` base, hierarquia de erros, site de docs |
+| **Miguel Arcanjo** | 2 | +1159 / -12 | Encoder, motor por graus, base motriz sincronizada, controle remoto |
+| **Adrews** | 3 | +71 / -8 | Parâmetro `portas=` (apelido e filtro de porta em `testar_*`) |
+
+Números de `git shortlog -sn` — mais em [CHANGELOG.md](https://github.com/i-barbosa/jacarEV3/blob/main/CHANGELOG.md).
