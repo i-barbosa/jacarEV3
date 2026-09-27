@@ -14,4 +14,4 @@ from . import fontes, protocolo, teclado, topicos
 from .robo import RoboEV3
 
 __all__ = ["RoboEV3", "fontes", "protocolo", "teclado", "topicos"]
-__version__ = "0.4.0"
+__version__ = "0.4.1"

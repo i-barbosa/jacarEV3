@@ -238,3 +238,51 @@ def test_parar_base_para_os_dois(robo):
         bytes([p.opOUTPUT_STOP]) + p.lc0(0)
         + p.lc0(p.PORTA_B | p.PORTA_C) + p.lc0(p.PARAR_BRAKE)
     )
+
+
+# ---------------------------------------------------------------- portas=
+
+
+def test_sem_portas_configuradas_testa_tudo_como_antes():
+    robo = RoboEV3(conexao=ConexaoFalsa())
+    assert set(robo._portas_motor_ativas()) == {'A', 'B', 'C', 'D'}
+    assert set(robo._portas_sensor_ativas()) == {1, 2, 3, 4}
+    assert robo._apelido('A') is None
+    assert robo._tipo_sensor_configurado(1) is None
+
+
+def test_portas_configuradas_restringe_a_varredura():
+    robo = RoboEV3(
+        conexao=ConexaoFalsa(),
+        portas={'B': 'motor_esquerda', 1: ('sensor_cor', 'cor')},
+    )
+    assert robo._portas_motor_ativas() == ['B']
+    assert robo._portas_sensor_ativas() == [1]
+    assert robo._apelido('B') == 'motor_esquerda'
+    assert robo._apelido(1) == 'sensor_cor'
+    assert robo._tipo_sensor_configurado(1) == 'cor'
+
+
+def test_tipo_sensor_invalido_e_recusado():
+    robo = RoboEV3(conexao=ConexaoFalsa(), portas={1: ('sensor_x', 'giroscopio')})
+    with pytest.raises(ValueError):
+        robo._tipo_sensor_configurado(1)
+
+
+def test_testar_motores_so_varre_portas_configuradas(robo, monkeypatch):
+    robo.portas = {'B': 'motor_esquerda'}
+    chamadas = []
+    monkeypatch.setattr(robo, 'testar_motor', lambda porta: chamadas.append(porta))
+    robo.testar_motores()
+    assert chamadas == ['B']
+
+
+def test_testar_sensores_respeita_tipo_fixado(robo, monkeypatch):
+    # porta 1 fixada em 'cor': só entra na rodada 'cor', não em 'toque'.
+    robo.portas = {1: ('sensor_cor', 'cor')}
+    chamadas = []
+    monkeypatch.setattr(robo, 'testar_ultrassonico', lambda p, tempo_limite: None)
+    monkeypatch.setattr(robo, 'testar_toque', lambda p, tempo_limite: chamadas.append(('toque', p)))
+    monkeypatch.setattr(robo, 'testar_cor', lambda p, tempo_limite: chamadas.append(('cor', p)))
+    robo.testar_sensores(tipos=('toque', 'cor'))
+    assert chamadas == [('cor', 1)]

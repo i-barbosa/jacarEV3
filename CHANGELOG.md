@@ -4,6 +4,27 @@ Todas as mudanças notáveis desse projeto são documentadas aqui.
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/),
 versionamento segue [SemVer](https://semver.org/lang/pt-BR/).
 
+## [0.4.1] - 2026-09-26
+
+### Adicionado
+- `RoboEV3(portas=...)` — dict opcional mapeando porta pra apelido (e,
+  pra sensor, tipo fixo), ex: `{'B': 'motor_esquerda', 1: ('cor', 'cor')}`.
+  Quando definido, `testar_motores()`, `testar_sensores()` e
+  `testar_tudo()` só varrem as portas listadas ali (com o apelido
+  aparecendo no console), em vez de sempre varrer A-D e 1-4 inteiro.
+  Sem `portas=`, o comportamento continua idêntico ao de antes. 5 testes
+  novos em `tests/test_protocolo.py` cobrindo apelido, tipo fixado e o
+  filtro de varredura.
+- `jacarev3.topicos.controle` volta a aparecer em `jacarev3.topicos`
+  (tinha ficado de fora do `__init__.py` do submódulo desde a 0.3.0).
+- `publish.yml` roda a suíte de testes antes de publicar no PyPI — tag
+  não sobe mais pacote com teste vermelho.
+
+### Corrigido
+- `topicos.__init__` reexportava só `circuito` e `desvio`; `controle`
+  só funcionava por import direto (`from jacarev3.topicos import
+  controle`), não pelo pacote (`jacarev3.topicos.controle`).
+
 ## [0.4.0] - 2026-09-18
 
 ### Adicionado
