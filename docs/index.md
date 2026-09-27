@@ -88,8 +88,8 @@ API — nomes de método, parâmetros, mensagens de erro — em português.
 
     ---
 
-    Dirigir a base motriz pelo teclado do PC ou por um controle físico
-    de ESP32 na rede, com parada automática por segurança.
+    Dirigir a base motriz com um controle de Xbox (via pygame) ou pelo
+    teclado do PC, com parada automática por segurança.
 
 </div>
 
