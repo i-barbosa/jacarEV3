@@ -119,3 +119,6 @@ with RoboEV3('00:16:53:64:F8:B8') as robo:
   livre de novo"
 - Combina com `circuito.seguir_linha()`: segue linha, mas desvia se
   aparecer obstáculo no meio do caminho
+
+Tem uma lista de exercícios em 4 níveis de dificuldade, desse módulo
+e dos outros, em [Atividades](atividades.md#desviar-de-obstaculo-desvio).

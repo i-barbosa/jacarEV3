@@ -121,3 +121,6 @@ padrão é o teclado do computador (`W`/`S`/`A`/`D`, espaço pra parar,
   externo (ex: um ESP32) mandando comando pela rede — ainda não é o
   fluxo que a gente usa em produção, mas o `exemplos/esp32_controle.py`
   no repositório mostra como ligar
+
+Tem uma lista de exercícios em 4 níveis de dificuldade, desse módulo
+e dos outros, em [Atividades](atividades.md#controle-remoto-controle).

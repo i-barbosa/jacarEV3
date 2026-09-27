@@ -119,3 +119,6 @@ lógica (fica mais rápido sem o print).
 - Faz o robô detectar quando perdeu a linha de vez (leitura não muda por
   muito tempo) e parar/apitar avisando
 - Ajusta a velocidade de acordo com uma curva mais fechada vs. reta
+
+Tem uma lista de exercícios em 4 níveis de dificuldade, desse módulo
+e dos outros, em [Atividades](atividades.md#seguir-linha-circuito).

@@ -93,6 +93,10 @@ API — nomes de método, parâmetros, mensagens de erro — em português.
 
 </div>
 
+Já leu os tutoriais? [**Atividades**](atividades.md) tem exercícios de
+cada módulo em 4 níveis de dificuldade, do "só roda e vê" até um
+projeto aberto.
+
 ## Padrão dos tutoriais
 
 Todo tutorial em `docs/` segue a mesma estrutura, pra manter a lib

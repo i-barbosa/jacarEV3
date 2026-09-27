@@ -100,3 +100,6 @@ com a leitura" mudando.
   pressionado, e vermelho quando solto
 - Faz o motor girar mais rápido quanto mais perto um obstáculo tá
   (em vez de só parar)
+
+Tem uma lista de exercícios em 4 níveis de dificuldade, desse módulo
+e dos outros, em [Atividades](atividades.md#basico-som-led-motor-sensor).

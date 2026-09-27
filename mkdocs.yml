@@ -53,6 +53,7 @@ nav:
   - Seguir linha: circuito.md
   - Desviar de obstáculo: desvio.md
   - Controle remoto: controle.md
+  - Atividades: atividades.md
 
 markdown_extensions:
   - attr_list
